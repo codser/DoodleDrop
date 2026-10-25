@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Doodle Drop</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">Doodle<span>Drop</span></div>
+    <div class="tabs" id="tabs">
+      <button data-mode="animate" class="on" title="Draw once, then animate it (draw-on, wiggle, draw-off)">Animate</button>
+      <button data-mode="fbf" title="Draw a new drawing every 1, 2 or 3 frames">Frame by frame</button>
+      <button data-mode="outline" title="Automatic hand-drawn outline of what's in the shot">Auto outline</button>
+    </div>
+    <div id="status">Starting…</div>
+  </header>
+
+  <div id="main">
+    <aside id="tools">
+      <div class="sec">Brushes</div>
+      <div id="brushBtns"></div>
+      <div class="sec">Tools</div>
+      <button class="tool" data-tool="eraser" title="Eraser (E)">Eraser</button>
+      <button class="tool" data-tool="fill" title="Draw a loop: it fills with an animated scribble (F)">Scribble fill</button>
+      <button class="tool" data-tool="stamp" title="Drag a box to place a hand-drawn shape (S)">Shapes</button>
+      <button class="tool outlineOnly hidden" data-tool="area" title="Draw a loop around the subject: auto outline stays inside it">Outline area</button>
+      <div class="sec">View</div>
+      <button class="tool" data-tool="zoom" title="Zoom (Z). Press and drag right/up to zoom in, left/down to zoom out. Tap = zoom in, Alt+tap = zoom out. Hold Z to zoom without leaving your brush. Double-click = Fit.">Zoom</button>
+      <button class="tool" data-tool="hand" title="Pan (H). Hold H to pan without leaving your brush. Pen side button or middle mouse also pans.">Pan</button>
+    </aside>
+
+    <section id="stageWrap">
+      <div id="stage">
+        <canvas id="bg"></canvas>
+        <canvas id="onion"></canvas>
+        <canvas id="ink"></canvas>
+        <canvas id="live"></canvas>
+      </div>
+      <div id="frameTag"></div>
+      <div id="zoomBar">
+        <button id="zOut" title="Zoom out (-)">&minus;</button>
+        <span id="zoomV">100%</span>
+        <button id="zIn" title="Zoom in (+)">+</button>
+        <button id="zFit" title="Fit to panel (0)">Fit</button>
+      </div>
+    </section>
+
+    <aside id="side">
+      <div class="group">
+        <h3>Colour</h3>
+        <div class="swatches" id="swatches"></div>
+        <div class="row" style="margin-top:6px"><label>Custom</label><input type="color" id="colorPick" value="#ffffff"></div>
+      </div>
+
+      <div class="group">
+        <h3>Brush</h3>
+        <div class="row"><label>Size</label><input type="range" id="size" min="1" max="80" value="10"><span class="val" id="sizeV">10</span></div>
+        <div class="row"><label>Opacity</label><input type="range" id="opacity" min="5" max="100" value="100"><span class="val" id="opacityV">100</span></div>
+        <div class="row"><label>Smoothing</label><input type="range" id="stab" min="0" max="90" value="45"><span class="val" id="stabV">45</span></div>
+        <label class="check"><input type="checkbox" id="pressure" checked> Pen pressure</label>
+        <label class="check"><input type="checkbox" id="taper" checked> Tapered ends</label>
+      </div>
+
+      <div class="group hidden" id="stampGroup">
+        <h3>Shapes</h3>
+        <div class="stamps" id="stamps"></div>
+        <div class="hint">Drag a box on the frame. Drag right-to-left to flip.</div>
+      </div>
+
+      <div class="group hidden" id="fillGroup">
+        <h3>Scribble fill</h3>
+        <div class="row"><label>Spacing</label><input type="range" id="fillGap" min="4" max="60" value="14"><span class="val" id="fillGapV">14</span></div>
+        <div class="row"><label>Angle</label><input type="range" id="fillAng" min="0" max="180" value="35"><span class="val" id="fillAngV">35</span></div>
+        <div class="hint">Draw a loop. It fills with a zig-zag scribble in the current brush.</div>
+      </div>
+
+      <!-- Mode: Animate -->
+      <div class="group mode" data-mode="animate">
+        <h3>Animation</h3>
+        <div class="row"><label>Draw-on</label><input type="number" id="aOn" min="0" value="12"><span class="val">fr</span></div>
+        <div class="row"><label>Hold</label><input type="number" id="aHold" min="0" value="36"><span class="val">fr</span></div>
+        <div class="row"><label>Draw-off</label><input type="number" id="aOff" min="0" value="0"><span class="val">fr</span></div>
+        <div class="row"><label>Ease</label><select id="aEase"><option value="out">Ease out</option><option value="inout">Ease in-out</option><option value="lin">Linear</option></select></div>
+        <div class="row"><label>Boil</label><input type="range" id="boil" min="0" max="12" step="0.5" value="2.5"><span class="val" id="boilV">2.5</span></div>
+        <div class="row"><label>Boil every</label><select id="boilEvery"><option value="1">1 frame</option><option value="2" selected>2 frames</option><option value="3">3 frames</option><option value="4">4 frames</option></select></div>
+        <div class="hint">Starts at the frame shown. Boil = the hand-drawn wiggle.</div>
+      </div>
+
+      <!-- Mode: Frame by frame -->
+      <div class="group mode hidden" data-mode="fbf">
+        <h3>Frame by frame</h3>
+        <div class="row"><label>Draw on</label><select id="fStep"><option value="1">1s (every frame)</option><option value="2" selected>2s (every 2 frames)</option><option value="3">3s</option><option value="4">4s</option></select></div>
+        <label class="check"><input type="checkbox" id="onionOn" checked> Onion skin</label>
+        <div class="row"><label>Onion frames</label><select id="onionN"><option>1</option><option selected>2</option><option>3</option></select></div>
+        <div class="row"><label>Boil</label><input type="range" id="fBoil" min="0" max="8" step="0.5" value="0"><span class="val" id="fBoilV">0</span></div>
+        <div class="btns"><button class="btn" id="fPrev">◀ Prev</button><button class="btn blue" id="fNext">Next ▶</button></div>
+        <div class="btns" style="margin-top:6px"><button class="btn" id="fCopy">Copy previous</button><button class="btn" id="fRestart">Start here</button></div>
+        <div class="hint">Tip: , and . also go Prev / Next.</div>
+      </div>
+
+      <!-- Mode: Auto outline -->
+      <div class="group mode hidden" data-mode="outline">
+        <h3>Auto outline</h3>
+        <label class="check"><input type="checkbox" id="oSel"> Length of selected clip</label>
+        <div class="row" id="oLenRow"><label>Length</label><input type="number" id="oLen" min="1" value="48"><span class="val">fr</span></div>
+        <div class="row"><label>Redraw every</label><select id="oStep"><option value="1">1 frame</option><option value="2" selected>2 frames</option><option value="3">3 frames</option></select></div>
+        <div class="row"><label>Detail</label><input type="range" id="oDetail" min="0" max="100" value="45"><span class="val" id="oDetailV">45</span></div>
+        <div class="row"><label>Simplify</label><input type="range" id="oSimp" min="0" max="6" value="2"><span class="val" id="oSimpV">2</span></div>
+        <div class="row"><label>Min line</label><input type="range" id="oMin" min="5" max="200" value="40"><span class="val" id="oMinV">40</span></div>
+        <div class="row"><label>Wobble</label><input type="range" id="oBoil" min="0" max="12" step="0.5" value="3"><span class="val" id="oBoilV">3</span></div>
+        <label class="check"><input type="checkbox" id="oSketch" checked> Sketchy double line</label>
+        <label class="check"><input type="checkbox" id="oKeep"> Keep my drawing on top</label>
+        <div class="btns"><button class="btn blue" id="oPreview">Preview this frame</button></div>
+        <div class="hint">Uses the brush and colour on the left. Use <b>Outline area</b> to draw a loop around your subject so only it gets outlined.</div>
+      </div>
+
+      <div class="group">
+        <h3>Effects</h3>
+        <label class="check"><input type="checkbox" id="fxBorder"> Sticker border</label>
+        <div class="row"><label>Border</label><input type="color" id="fxBorderC" value="#ffffff"><input type="range" id="fxBorderW" min="1" max="20" value="5"></div>
+        <label class="check"><input type="checkbox" id="fxGlow"> Glow</label>
+        <div class="row"><label>Glow</label><input type="color" id="fxGlowC" value="#ff5c8a"><input type="range" id="fxGlowS" min="4" max="80" value="24"></div>
+        <label class="check"><input type="checkbox" id="fxShadow"> Drop shadow</label>
+      </div>
+
+      <div class="group">
+        <h3>Frame</h3>
+        <div class="row"><label>Show frame</label><input type="range" id="bgDim" min="0" max="100" value="100"><span class="val" id="bgDimV">100</span></div>
+        <div class="btns"><button class="btn" id="grab">Grab frame at playhead</button></div>
+        <label class="check" title="After a successful Render &amp; place, wipe every drawing so you start fresh (Ctrl+Z brings them back)"><input type="checkbox" id="autoClear" checked> Clear all drawings after Render &amp; place</label>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    <button class="btn" id="undo" title="Ctrl+Z">Undo</button>
+    <button class="btn" id="redo" title="Ctrl+Shift+Z">Redo</button>
+    <button class="btn" id="clear" title="Clear this drawing (Delete)">Clear frame</button>
+    <button class="btn" id="clearAll" title="Clear every drawing on every frame at once (Shift+Delete). Ctrl+Z undoes it.">Clear all</button>
+    <span class="grow"></span>
+    <div id="progress"><div></div></div>
+    <button class="btn" id="play">▶ Preview</button>
+    <button class="btn go" id="render">Render &amp; place</button>
+  </footer>
+</div>
+
+<script src="js/brushes.js"></script>
+<script src="js/shapes.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
