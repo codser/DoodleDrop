@@ -39,18 +39,26 @@ Renders a transparent PNG sequence into a `Doodles` folder next to your project,
 
 ## Installation
 
-Doodle Drop is an unsigned CEP extension, so Premiere needs to be told to load unsigned panels.
+### Easy install (recommended)
+1. Go to **[Releases](https://github.com/codser/DoodleDrop/releases/latest)** and download `DoodleDrop-v1.0.0.zip`.
+2. Close Premiere Pro and unzip the download.
+3. Run the installer:
+   - **Windows:** double-click `Install-Windows.bat`. If Windows shows "Windows protected your PC", click **More info → Run anyway**.
+   - **Mac:** right-click `Install-Mac.command` → **Open** → **Open**.
+4. Open Premiere Pro and go to **Window → Extensions → Doodle Drop**.
 
-1. **Download** this repo (green **Code** button → **Download ZIP**) and unzip it.
-2. **Copy** the folder (rename it to `DoodleDrop`) into your CEP extensions folder:
+The installer copies the panel into Adobe's extensions folder and turns on loading of unsigned panels, which Doodle Drop needs.
+
+### Manual install
+1. Copy the `DoodleDrop` folder from the zip into your CEP extensions folder:
    - **Windows:** `C:\Users\<you>\AppData\Roaming\Adobe\CEP\extensions\`
    - **macOS:** `~/Library/Application Support/Adobe/CEP/extensions/`
-3. **Enable unsigned extensions** (one time):
+2. Enable unsigned extensions (one time):
    - **Windows:** open Registry Editor, go to `HKEY_CURRENT_USER\Software\Adobe\CSXS.11` (also `CSXS.12` for newer Premiere versions) and add a String value `PlayerDebugMode` = `1`.
    - **macOS:** in Terminal run `defaults write com.adobe.CSXS.11 PlayerDebugMode 1` (repeat with `CSXS.12`).
-4. **Restart Premiere Pro** and open **Window → Extensions → Doodle Drop**.
+3. Restart Premiere Pro and open **Window → Extensions → Doodle Drop**.
 
-Requires Premiere Pro 2020 (v14) or newer.
+Requires Premiere Pro 2020 (v14) or newer. If the panel doesn't show up, repeat step 2 with `CSXS.13`.
 
 ## Keyboard shortcuts
 
@@ -75,6 +83,7 @@ js/app.js           Panel logic (drawing, modes, zoom, render)
 js/brushes.js       Brush engine, effects, edge tracing
 js/shapes.js        Hand-drawn shape library
 jsx/host.jsx        Premiere Pro ExtendScript (frame grab, import, placement)
+install/            One-click installers for Windows and Mac + install guide
 ```
 
 ## Feedback

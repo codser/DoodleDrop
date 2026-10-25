@@ -1,0 +1,39 @@
+DOODLE DROP - HOW TO INSTALL
+============================
+
+Requires Adobe Premiere Pro 2020 (v14) or newer, on Windows or Mac.
+Close Premiere Pro before installing.
+
+WINDOWS
+1. Unzip the download (right-click > Extract All).
+2. Double-click "Install-Windows.bat".
+   If Windows shows "Windows protected your PC", click More info > Run anyway.
+3. Open Premiere Pro and go to Window > Extensions > Doodle Drop.
+
+MAC
+1. Unzip the download (double-click the zip).
+2. Right-click "Install-Mac.command" and choose Open, then click Open again.
+   (Right-click is needed the first time because the file isn't from the App Store.)
+3. Open Premiere Pro and go to Window > Extensions > Doodle Drop.
+
+MANUAL INSTALL (if the installer doesn't work)
+1. Copy the "DoodleDrop" folder to:
+   Windows: C:\Users\<you>\AppData\Roaming\Adobe\CEP\extensions\
+   Mac:     ~/Library/Application Support/Adobe/CEP/extensions/
+2. Allow unsigned extensions (one time):
+   Windows: open Registry Editor, go to HKEY_CURRENT_USER\Software\Adobe\CSXS.11
+            (and CSXS.12), add a String value named PlayerDebugMode set to 1.
+   Mac:     in Terminal run
+            defaults write com.adobe.CSXS.11 PlayerDebugMode 1
+            defaults write com.adobe.CSXS.12 PlayerDebugMode 1
+3. Restart Premiere Pro and open Window > Extensions > Doodle Drop.
+
+TROUBLESHOOTING
+- Doodle Drop isn't in Window > Extensions: restart Premiere fully. If it's still
+  missing, your Premiere may use a newer CSXS number; repeat step 2 with CSXS.13.
+- The panel says "Open a sequence": open or create a sequence, then press
+  "Grab frame at playhead".
+
+Shortcuts: Z zoom (hold for temporary), H pan, B brush, E eraser, F scribble fill,
+S shapes, [ ] brush size, Space preview, Delete clear frame, Shift+Delete clear all,
+Ctrl+Z undo.
