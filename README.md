@@ -20,6 +20,12 @@ Doodle Drop is a Premiere Pro panel that grabs the frame at your playhead and le
 - **Scribble fill** (`F`): draw a loop and it fills with a zig-zag scribble that animates on
 - **Shapes** (`S`): drag a box to place a hand-drawn circle, arrow, star, heart, sparkle, burst, tick, cross, spiral, scribble, loops, crown, brackets, speech bubble or underline
 
+### Length: hold, repeat, match clip
+In Animate and Frame by frame mode:
+- **Hold at end:** keeps the finished doodle on screen for extra frames, still wiggling (in Animate it's added to the Hold before draw-off).
+- **Repeat:** plays the whole animation several times in a row.
+- **Match selected clip length:** select a clip on the timeline and the render ends exactly where that clip ends. With Repeat above 1 it loops to fill the clip, otherwise it holds the end.
+
 ### Effects
 Sticker border, glow and drop shadow, all baked into the render.
 
@@ -40,7 +46,7 @@ Renders a transparent PNG sequence into a `Doodles` folder next to your project,
 ## Installation
 
 ### Easy install (recommended)
-1. Go to **[Releases](https://github.com/codser/DoodleDrop/releases/latest)** and download `DoodleDrop-v1.0.0.zip`.
+1. Go to **[Releases](https://github.com/codser/DoodleDrop/releases/latest)** and download `DoodleDrop-v1.1.0.zip`.
 2. Close Premiere Pro and unzip the download.
 3. Run the installer:
    - **Windows:** double-click `Install-Windows.bat`. If Windows shows "Windows protected your PC", click **More info → Run anyway**.

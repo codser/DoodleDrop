@@ -536,6 +536,8 @@
     Array.prototype.forEach.call(document.querySelectorAll(".mode"), function (g) { g.classList.toggle("hidden", g.dataset.mode !== m); });
     Array.prototype.forEach.call(document.querySelectorAll(".outlineOnly"), function (g) { g.classList.toggle("hidden", m !== "outline"); });
     $("clear").textContent = m === "fbf" ? "Clear frame" : "Clear";
+    $("lenGroup").classList.toggle("hidden", m === "outline");
+    lenInfo();
     if (S.tool === "area" && m !== "outline") { S.tool = "draw"; }
     if (m !== "fbf" && S.idx !== 0) {
       S.idx = 0;
@@ -566,7 +568,7 @@
   /* ---------------- settings memory ---------------- */
   var SAVE_IDS = ["size", "opacity", "stab", "pressure", "taper", "fillGap", "fillAng", "aOn", "aHold", "aOff", "aEase", "boil", "boilEvery",
     "fStep", "onionOn", "onionN", "fBoil", "oSel", "oLen", "oStep", "oDetail", "oSimp", "oMin", "oBoil", "oSketch", "oKeep",
-    "fxBorder", "fxBorderC", "fxBorderW", "fxGlow", "fxGlowC", "fxGlowS", "fxShadow", "bgDim", "autoClear"];
+    "fxBorder", "fxBorderC", "fxBorderW", "fxGlow", "fxGlowC", "fxGlowS", "fxShadow", "bgDim", "autoClear", "lHold", "lLoop", "lMatch"];
   function save() {
     try {
       var o = { brush: S.brush, color: S.color, stamp: S.stamp, tool: /^(area|zoom|hand)$/.test(S.tool) ? "draw" : S.tool, mode: S.mode };
@@ -675,6 +677,36 @@
     $(id).addEventListener("change", function () { if (S.outlinePreview && S.bg) { S.outlinePreview = outlineStrokes(S.bg); renderInk(); tag(); } });
   });
 
+  /* ---------------- length: hold / repeat / match clip ---------------- */
+  function lenOpts() {
+    return {
+      hold: Math.max(0, parseInt($("lHold").value, 10) || 0),
+      reps: Math.max(1, parseInt($("lLoop").value, 10) || 1),
+      match: $("lMatch").checked
+    };
+  }
+  // frames from `start` to the end of the selected timeline clip
+  async function matchFrames(start) {
+    var r = parse(await ev("ddSelRange()"));
+    if (!r.ok) { throw r.msg + " (Match selected clip length is on.)"; }
+    var total = Math.round((parseFloat(r.parts[1]) - start) / S.tpf);
+    if (total < 1) { throw "The selected clip ends before the doodle's start frame. Select a clip that runs past the playhead."; }
+    return total;
+  }
+  function lenInfo() {
+    var L = lenOpts(), el = $("lInfo"), t;
+    if (S.mode === "animate") {
+      t = L.match ? (L.reps > 1 ? "Loops the whole animation until the selected clip ends." : "Stretches the Hold so draw-off finishes where the selected clip ends.")
+        : (L.hold ? "Hold at end is added to the Hold before draw-off." : "");
+    } else {
+      t = L.match ? (L.reps > 1 ? "Loops the drawings until the selected clip ends." : "Holds the last drawing (still boiling) until the selected clip ends.")
+        : (L.hold ? "The last drawing stays on screen" + (+$("fBoil").value ? ", still boiling." : ". Turn up Boil to keep it wiggling.") : "");
+    }
+    el.textContent = t;
+    el.classList.toggle("hidden", !t);
+  }
+  ["lHold", "lLoop", "lMatch", "fBoil"].forEach(function (id) { $(id).addEventListener("input", lenInfo); $(id).addEventListener("change", lenInfo); });
+
   /* ---------------- animation plans ---------------- */
   function ease(t, kind) {
     t = Math.max(0, Math.min(1, t));
@@ -692,18 +724,35 @@
       var offF = Math.max(0, parseInt($("aOff").value, 10) || 0);
       if (on + hold + offF === 0) { hold = 1; }
       var every = +$("boilEvery").value, amt = +$("boil").value * k(), ek = $("aEase").value;
+      var L = lenOpts(), cycle = on + hold + offF, reps = L.reps, lastHold = hold + L.hold, loopAll = false, count;
+      if (L.match) {
+        count = await matchFrames(S.startTicks);
+        if (reps > 1) { loopAll = true; }                      // loop until the clip ends
+        else { lastHold = Math.max(0, count - on - offF); }    // stretch the hold to fit
+      } else {
+        count = cycle * (reps - 1) + on + lastHold + offF;
+      }
+      // where frame i sits: phase (on / hold / off) and its position in that phase
+      var at = function (i) {
+        var c = Math.floor(i / cycle), j, h = hold;
+        if (loopAll) { j = i % cycle; }
+        else if (c >= reps - 1) { j = i - (reps - 1) * cycle; h = lastHold; }
+        else { j = i % cycle; }
+        if (j < on) { return { ph: "on", t: ease((j + 1) / on, ek) }; }
+        if (j < on + h) { return { ph: "h" }; }
+        return { ph: "off", t: ease((j - on - h + 1) / offF, ek) };
+      };
       return {
-        count: on + hold + offF, start: S.startTicks,
+        count: count, start: S.startTicks,
         key: function (i) {
-          var b = amt ? Math.floor(i / every) : 0;
-          if (i < on) { return "on" + i; }
-          if (i < on + hold) { return "h" + b; }
-          return "off" + i;
+          var a = at(i);
+          if (a.ph === "h") { return "h" + (amt ? Math.floor(i / every) : 0); }
+          return a.ph + i;
         },
         draw: function (i, ctx) {
-          var o = { boilAmt: amt, boilSeed: Math.floor(i / every) };
-          if (i < on) { o.from = 0; o.to = ease((i + 1) / on, ek); }
-          else if (i >= on + hold) { o.from = ease((i - on - hold + 1) / offF, ek); o.to = 1; }
+          var a = at(i), o = { boilAmt: amt, boilSeed: Math.floor(i / every) };
+          if (a.ph === "on") { o.from = 0; o.to = a.t; }
+          else if (a.ph === "off") { o.from = a.t; o.to = 1; }
           DD.renderDrawing(ctx, strokes, o);
         }
       };
@@ -713,12 +762,21 @@
       Object.keys(S.frames).forEach(function (n) { if (S.frames[n] && S.frames[n].length) { maxIdx = Math.max(maxIdx, +n); } });
       if (maxIdx < 0) { throw "Draw something first."; }
       var fb = +$("fBoil").value * k();
+      var L = lenOpts(), base = (maxIdx + 1) * step, reps = L.reps, loopAll = false, fcount;
+      if (L.match) { fcount = await matchFrames(S.startTicks); loopAll = reps > 1; }
+      else { fcount = base * reps + L.hold; }
+      // which drawing frame i shows, and its boil seed (keeps changing while held)
+      var fat = function (i) {
+        if (loopAll || i < base * reps) { var n = Math.floor((i % base) / step); return { n: n, seed: n }; }
+        return { n: maxIdx, seed: maxIdx + 1 + Math.floor((i - base * reps) / step) };
+      };
       return {
-        count: (maxIdx + 1) * step, start: S.startTicks, step: step,
-        key: function (i) { return "d" + Math.floor(i / step); },
+        count: fcount, start: S.startTicks, step: step,
+        idx: function (i) { return fat(i).n; },
+        key: function (i) { var a = fat(i); return "d" + a.n + "s" + (fb ? a.seed : 0); },
         draw: function (i, ctx) {
-          var n = Math.floor(i / step);
-          DD.renderDrawing(ctx, S.frames[n] || [], { boilAmt: fb, boilSeed: n });
+          var a = fat(i);
+          DD.renderDrawing(ctx, S.frames[a.n] || [], { boilAmt: fb, boilSeed: a.seed });
         }
       };
     }
@@ -771,7 +829,7 @@
       offx.clearRect(0, 0, S.W, S.H);
       await plan.draw(i, offx);
       if (S.mode === "fbf") {
-        var n = Math.floor(i / plan.step);
+        var n = plan.idx ? plan.idx(i) : Math.floor(i / plan.step);
         var t = S.startTicks + n * plan.step * S.tpf;
         if (n !== lastN && S.bgCache[t]) { S.bg = S.bgCache[t]; renderBg(); lastN = n; }
       }

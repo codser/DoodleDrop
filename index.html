@@ -100,6 +100,15 @@
         <div class="hint">Tip: , and . also go Prev / Next.</div>
       </div>
 
+      <!-- Length: hold / repeat / match clip (Animate + Frame by frame) -->
+      <div class="group" id="lenGroup">
+        <h3>Length</h3>
+        <div class="row" title="Keep the finished doodle on screen (still wiggling) for this many extra frames"><label>Hold at end</label><input type="number" id="lHold" min="0" value="0"><span class="val">fr</span></div>
+        <div class="row" title="Play the whole animation this many times in a row"><label>Repeat</label><input type="number" id="lLoop" min="1" value="1"><span class="val">&times;</span></div>
+        <label class="check" title="Make the render end exactly where the selected timeline clip ends"><input type="checkbox" id="lMatch"> Match selected clip length</label>
+        <div class="hint" id="lInfo"></div>
+      </div>
+
       <!-- Mode: Auto outline -->
       <div class="group mode hidden" data-mode="outline">
         <h3>Auto outline</h3>
